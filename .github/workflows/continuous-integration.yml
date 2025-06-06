@@ -1,0 +1,32 @@
+on:
+  push:
+    branches:
+      - "main"
+jobs:
+  test-on-py38-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+      - name: Install Tox
+        run: pip install tox
+      - name: Run default tests
+        run: tox run -e py38
+
+  test-on-py313-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Tox
+        run: pip install tox
+      - name: Run default tests
+        run: tox run -e py313

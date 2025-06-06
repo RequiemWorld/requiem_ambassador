@@ -1,2 +1,44 @@
-# requiem_ambassador
-The open-source part of the ambasador meant to add websocket support to the game client and provide protection against severe XSS/content loading vulnerabilities.
+# Terminology Notice
+
+The terminology you see on this page is not reflective of the broader reverse engineering of <redacted> on the project. The terminology used here is intentionally obscured and illiterate, while still communicating enough information regarding what we are defending against and the features we are adding. 
+
+# Requiem Ambassador
+
+The ambassador is meant to mitigate the client side security issues of the desktop game client, while allowing configuration of the server it uses while modifying it only once. By modifying the client to use the ambassador, **1)** any SWF content loaded from a relative path can be scanned for malicious content e.g. anything that uses ``flash.filesystem``, or loads other content that can do harm e.g. ``loadBytes`` **2)** The game client can be configured to connect to a custom server via a configuration file. **3)** The game client will virtually use websockets, allowing the cloudflare to be put in front of the game server. **4)** Any packet data that could be used to make the client load content that doesn't go through the local proxy/firewall can be blocked.
+
+- **Firewalling Context - Primer**
+  - The game client will load various SWF assets into the game and when some of them are loaded due to it using ``loadBytes`` to do it, they have access to everything the running SWF does which includes networking and filesystem access, combine this with XSS vulnerabilities and it is possible for a single SWF to automatically delete all the files that don't require admin rights to do so. The damage that is possible with how content is loaded is **severe**. Ignoring the possibility of getting content loaded on peoples clients from just any URL, **private servers are unsafe!**, to give an example of what could be possible, a private server project could release a completely trust worthy downloadable game client, and then switch a hosted SWF file or add a new one and get live access to anyones files over the network, modify stuff, acquire information, deal massive damage, and on top of that, in the even that the software is exploited somewhere and files are modified, the damage that is possible is more severe than usual. This is why strong, client-side security measures should be put in place before anything is released publicly again.
+
+- **Game Packet Context**
+  - The packet data for the game is encoded in base64 and transported wrapped in an <m> xml tag and terminated by a null byte.
+      - This is done over an unencrypted connection and every chat message and private thing can be eavesdropped on over WiFi/other areas.
+      - This is done over a TCP connection with some caveats depending on where the game is loaded (think crossdomain.xml, or not needing one).
+        - The downloadable desktop client can connect anywhere over TCP without getting the policies of the server first since it's in the application sandbox.
+  - The packet data is where various vulnerabilities lay regarding getting content loaded, the packet for throwing stuff in particular.
+    - Throw packets always officially contained the full url to the directory of the swf to load e.g. ``http://example.com/path/to/reverso`` which would be combined by the client with ``http://example.com/path/to/reverso``
+      - In a modified version of the client I released publicly in 2021, I myself patched the client to use relative paths for loading throwables which would fix the XSS issue and result in a packet with that URL causing the client to try to load ``http://example.com/path/to/reverso/http://example.com/path/to/reverso``. Prior to this the client was patched only to send relative paths for the throwables, while expecting full urls still, breaking throwing from official clients, and still allowing anything that will send a packet in the room with a url to a throwable through.
+    - Throw packets are not the only ones with XSS vulnerabiltiies, and though I have an **extensive** knowledge of the data sent to/from an oW server and have even written scripts to login/connect and do it myself for a lot of stuff, there are hundreds of packet types, and I've only seen and worked with a limited few.
+
+
+##  Coming/Considered Features
+  - **HTTP Protocol - Reverse Proxy**
+    - **SWF Scanning - Malicious Content**
+      - Any SWF file that is given in a response to a request will be decompressed and scanned, it will be checked to see if it can load content from elsewhere (evading scanning) or if it will use something that can cause damage that is uncharacteristic of the dynamically loaded content on the game, e.g. ``flash.filesystem``, ``loadBytes``. The assumption is that all content loaded by the game client dynamically will be by relative path and be combined with a url to the reverse proxy. Failure for the game client to do this, means that there is no filtering.
+    - **SWF Scanning - Evasion Awareness (Removing Transfer-Encoding/Content-Encoding case insensitively)**
+      - This solution is something I am well researched on and prepared for. A SWF can be requested and the content in the response can be encoded with something like a compression, possibly even multiple times (at least I believe between content-encoding, transfer-encoding, and potentially being able to specifiy multiple in each). We check if the response content is a SWF (via the **three** signatures, FWS, CWS, ZWS) and if it is, we decompress it appropriately and search for the strings of libraries it used. **Where does the awareness come in?** This can be likely be evaded in many variations of ways very easily by adding content encoding, or transfer encoding headers, and encoding the content, then we may see compressed/encoded data and let it through, and the client will see that it is encoded, decode it, and process the SWF data getting it loaded and risking severe damage. **Our solution**: Remove content-encoding and transfer-encoding headers, in any casings. Worst case scenario is the client ends up with garbage that it doesn't know what to do with.
+
+  - **Game Protocol - Reverse Proxy**
+    - **Game Packet Filtering**
+    - - Scanning/Blocking: Any known packet data that could ever be used to make a client load content from a whole url can be blocked. Most of the content on the game should be given via relative paths that get combined with baseurls gotten at start up.
+      - Whitelisting: Each packet of game data has a number that indicates what is to be expected on it, we can restrict the proxy to only letting through ones that we know are safe 
+    - **Websocket Support**
+      - We're adding/virtually changing the client to send the packet data to us over a websocket connection, via the game protocol reverse proxy that we are adding. **Meaning**: The client will send the packet data in ``<m>base64data></m>\x00`` format, and each packet processed and meant to be sent upstream, will go over a corresponding websocket connection.
+      - The game client sends packet data over xml messages on a plain tcp connection. This is undesirable because to host ourWorld it means that we have to expose our servers directly to the internet leaving them prone to more DDoS attacks.
+
+## Safety Measures
+
+We're using hexagonal architecture (ports and adapters) to assure maximum testability for everything important at the unit level, our security and proxying code is independent of third party libraries while using them in implementation, all of the code for making HTTP requests upstream, and doing so securely (filtering malicious SWFs, stripping content encoding, testing it) will remain the same even as details such as the libraries we use for actually making those requests and adapting the responses of third party http libraries in. The HTTP proxy part of this application will be in line with a ``driving adapter``, that is, it drives the application with the web framework listening for requests and responses, adapts the requests in to the secure http requesting use cases, takes their responses and adapts them back out. This leaves the specific web framework as a plugin to our core architecture.
+
+- By having core HTTP requests fit to our purpose and having third party code adapt to them, we'll be able to mock the ``HTTPRequestExecutor`` that will be used by something like ``SecurelyMakeHTTPRequestUseCase``, and have it return the responses we expect during production at the unit level.
+- We've taken what I believe are reasonable enough measures to assure that the code for making and adapting HTTP requests actually work. There are/will be adapter integration tests in place using the specific implementations we've made and will be using, against a wiremock server with stubbed responses.
+- We can assure using this architecture that our code for making HTTP requests, and filtering out responses as necessary will work as we intend it to, and to really assure this we will be testing against message samples for all three variants of SWF files, containing what we want to block.

@@ -8,8 +8,8 @@ from wiremock.client import MappingResponse
 from wiremock.resources.mappings import HttpMethods
 from wiremock.resources.mappings.resource import Mappings
 from wiremock.testing.testcontainer import WireMockContainer
-from requiem_ambassador.requests import HTTPResponse, HTTPRequest
-from requiem_ambassador.aiohttp import AiohttpHTTPRequestExecutor
+from requiem_ambassador.http_proxy.requests import HTTPResponse, HTTPRequest
+from requiem_ambassador.http_proxy.aiohttp import AiohttpHTTPRequestExecutor
 
 
 class AiohttpRequestExecutorIntegrationTestFixture(IsolatedAsyncioTestCase):

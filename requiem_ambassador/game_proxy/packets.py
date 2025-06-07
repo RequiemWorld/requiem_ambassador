@@ -21,6 +21,13 @@ class GamePacket:
 			raise ValueError("valid packet data for the game server/client should always start with one")
 		self._packet_data = packet_data
 
+	@property
+	def type_number(self):
+		"""
+		The number that indicates what is to be further expected inside the packet, more or less.
+		"""
+		return int.from_bytes(self._packet_data[7:9], "big")
+
 	def to_original_xml_and_base64(self) -> bytes:
 		"""
 		Takes the packet data, adds a big endian ordered 4-byte length prefix,

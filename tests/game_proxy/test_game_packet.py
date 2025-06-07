@@ -57,3 +57,18 @@ class TestOriginalFormatConversionMethod(unittest.TestCase):
 		decoded_base64_content = self._parse_and_decode_base64_from_written_data(written_data)
 		self.assertEqual(game_packet_data_with_length_prefix, decoded_base64_content)
 		self.assertTrue(decoded_base64_content.startswith(b"\x00\x00\x00\r"), game_packet_data_with_length_prefix)
+
+
+class TestTypeNumberReading(unittest.TestCase):
+
+	def test_should_read_type_number_correctly_when_less_than_255(self):
+		packet_one = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00")
+		packet_two = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x00\x09\x00\x00\x00\x00")
+		self.assertEqual(4, packet_one.type_number)
+		self.assertEqual(9, packet_two.type_number)
+
+	def test_should_read_type_number_correctly_when_greater_than_255(self):
+		packet_one = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00")
+		packet_two = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x01\x01\x00\x00\x00\x00")
+		self.assertEqual(256, packet_one.type_number)
+		self.assertEqual(257, packet_two.type_number)

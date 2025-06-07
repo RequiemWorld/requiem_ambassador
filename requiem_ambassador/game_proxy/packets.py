@@ -18,7 +18,7 @@ class GamePacket:
 		if not len(packet_data) >= 13:
 			raise ValueError("the minimum length of valid packet data is 13 (we aren't working with a length prefix here)")
 		if not packet_data.startswith(b"\x01"):
-			raise ValueError("valid packet data for the game server should always start with one")
+			raise ValueError("valid packet data for the game server/client should always start with one")
 		self._packet_data = packet_data
 
 	def to_original_xml_and_base64(self) -> bytes:

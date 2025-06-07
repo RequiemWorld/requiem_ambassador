@@ -56,11 +56,31 @@ class MockGamePacketSender(GamePacketSender):
 	def __init__(self):
 		self._sent_packets: list[GamePacket] = list()
 
+	def clear_recorded_packets(self) -> None:
+		self._sent_packets.clear()
+
+	def assert_no_packets_sent(self):
+		assert len(self._sent_packets) == 0
+
 	def assert_exact_amount_of_packets_sent(self, number: int) -> None:
 		assert len(self._sent_packets) == number
 
 	def assert_exactly_one_packet_sent(self) -> None:
 		self.assert_exact_amount_of_packets_sent(1)
+
+	def assert_packet_with_type_number_sent(self, type_number: int) -> None:
+		found_packet_with_type = False
+		for game_packet in self._sent_packets:
+			if game_packet.type_number == type_number:
+				return
+		assert found_packet_with_type, f"no packet with type number {type_number} was sent."
+
+	def assert_packet_with_type_number_sent_exactly_once(self, type_number: int) -> None:
+		packets_with_number = 0
+		for game_packet in self._sent_packets:
+			if game_packet.type_number == type_number:
+				packets_with_number += 1
+		assert packets_with_number == 1, f"only one packet of that type should have been sent but {packets_with_number} were instead"
 
 	async def send_game_packet(self, packet: GamePacket) -> None:
 		self._sent_packets.append(packet)

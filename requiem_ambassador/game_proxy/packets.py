@@ -2,8 +2,8 @@ from __future__ import annotations
 import abc
 from base64 import b64decode, b64encode
 
-
-MINIMUM_VALID_PACKET_DATA = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+# There is a strange issue with pycharm thinking this is a string, added bytes type annotation
+MINIMUM_VALID_PACKET_DATA: bytes = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 class GamePacket:
 	"""

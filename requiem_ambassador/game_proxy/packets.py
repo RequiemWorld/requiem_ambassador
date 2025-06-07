@@ -41,6 +41,20 @@ class GamePacket:
 		packet_data_with_length_prefix = packet_data_length_prefix + self._packet_data
 		return b"<m>" + b64encode(packet_data_with_length_prefix) + b"</m>\x00"
 
+	@classmethod
+	def from_original_xml_and_base64(cls, xml_base64_data: bytes) -> GamePacket:
+		"""
+		Takes packet data that has had its length prefixed as a 32-bit big endian
+		ordered integer, encoded with base64, wrapped in <m> </m> and optionally terminated with a null byte.
+
+		:raises ValueError: When the length of the encoded data is less the size of the length prefix (4 bytes)
+		"""
+		base64_data = xml_base64_data.split(b"<m>")[1].split(b"</m>")[0]
+		packet_data_with_length_prefix = b64decode(base64_data)
+		if len(packet_data_with_length_prefix) < 4:
+			raise ValueError(f"{packet_data_with_length_prefix} is not packet data with its length prefixed.")
+		return GamePacket(packet_data_with_length_prefix[4:])
+
 
 class GamePacketSender(abc.ABC):
 

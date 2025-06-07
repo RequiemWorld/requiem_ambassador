@@ -1,7 +1,8 @@
 import unittest
 from base64 import b64decode
+from base64 import b64encode
 from requiem_ambassador.game_proxy import GamePacket
-
+from requiem_ambassador.game_proxy.packets import MINIMUM_VALID_PACKET_DATA
 
 minimum_length_valid_packet_data = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 class TestGamePacketConstructor(unittest.TestCase):
@@ -57,6 +58,30 @@ class TestOriginalFormatConversionMethod(unittest.TestCase):
 		decoded_base64_content = self._parse_and_decode_base64_from_written_data(written_data)
 		self.assertEqual(game_packet_data_with_length_prefix, decoded_base64_content)
 		self.assertTrue(decoded_base64_content.startswith(b"\x00\x00\x00\r"), game_packet_data_with_length_prefix)
+
+
+class TestFromOriginalXMLBase64DataMethod(unittest.TestCase):
+	def setUp(self):
+		self._valid_packet_data = MINIMUM_VALID_PACKET_DATA
+		self._valid_packet_data_with_prefix = self._add_length_prefix(self._valid_packet_data)
+
+	@staticmethod
+	def _add_length_prefix(packet_data: bytes) -> bytes:
+		return len(packet_data).to_bytes(4, "big") + packet_data
+
+	def test_should_raise_value_error_if_length_of_encoded_data_is_less_than_length_prefix(self):
+		data = b"<m>" + b64decode(b"\x00\x00\x00") + b"</m>"
+		with self.assertRaises(ValueError):
+			GamePacket.from_original_xml_and_base64(data)
+	def test_should_read_length_prefixed_base64_encoded_xml_wrapped_packet_data_correctly_with_null_ending(self):
+		data = b"<m>" + b64encode(self._valid_packet_data_with_prefix) + b"</m>\x00"
+		game_packet = GamePacket.from_original_xml_and_base64(data)
+		self.assertEqual(self._valid_packet_data, game_packet.packet_data)
+
+	def test_should_read_length_prefixed_base64_encoded_xml_wrapped_packet_data_correctly_without_null_ending(self):
+		data = b"<m>" + b64encode(self._valid_packet_data_with_prefix) + b"</m>"
+		game_packet = GamePacket.from_original_xml_and_base64(data)
+		self.assertEqual(self._valid_packet_data, game_packet.packet_data)
 
 
 class TestTypeNumberReading(unittest.TestCase):

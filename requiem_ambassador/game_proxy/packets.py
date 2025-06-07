@@ -22,6 +22,10 @@ class GamePacket:
 		self._packet_data = packet_data
 
 	@property
+	def packet_data(self) -> bytes:
+		return self._packet_data
+
+	@property
 	def type_number(self):
 		"""
 		The number that indicates what is to be further expected inside the packet, more or less.

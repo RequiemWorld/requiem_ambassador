@@ -72,3 +72,9 @@ class TestTypeNumberReading(unittest.TestCase):
 		packet_two = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x01\x01\x00\x00\x00\x00")
 		self.assertEqual(256, packet_one.type_number)
 		self.assertEqual(257, packet_two.type_number)
+
+
+class TestPacketDataProperty(unittest.TestCase):
+	def test_should_have_value_that_was_passed_in_constructor(self):
+		game_packet = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+		self.assertEqual(b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", game_packet.packet_data)

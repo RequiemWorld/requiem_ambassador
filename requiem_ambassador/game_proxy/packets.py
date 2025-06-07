@@ -1,6 +1,9 @@
+from __future__ import annotations
 import abc
 from base64 import b64decode, b64encode
 
+
+MINIMUM_VALID_PACKET_DATA = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 class GamePacket:
 	"""
@@ -40,3 +43,17 @@ class GamePacketReader(abc.ABC):
 	@abc.abstractmethod
 	async def read_game_packet(self) -> GamePacket:
 		raise NotImplementedError
+
+
+class MockGamePacketSender(GamePacketSender):
+	def __init__(self):
+		self._sent_packets: list[GamePacket] = list()
+
+	def assert_exact_amount_of_packets_sent(self, number: int) -> None:
+		assert len(self._sent_packets) == number
+
+	def assert_exactly_one_packet_sent(self) -> None:
+		self.assert_exact_amount_of_packets_sent(1)
+
+	async def send_game_packet(self, packet: GamePacket) -> None:
+		self._sent_packets.append(packet)

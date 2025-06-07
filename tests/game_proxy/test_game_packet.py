@@ -1,0 +1,59 @@
+import unittest
+from base64 import b64decode
+from requiem_ambassador.game_proxy import GamePacket
+
+
+minimum_length_valid_packet_data = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+class TestGamePacketConstructor(unittest.TestCase):
+
+	def test_should_raise_value_error_when_given_otherwise_valid_data_that_does_not_start_with_one(self):
+		# valid packet data from the original game client/server will always start with one.
+		minimum_length_data_not_starting_with_one = b"\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		assert len(minimum_length_data_not_starting_with_one) == 13
+		with self.assertRaises(ValueError):
+			GamePacket(minimum_length_data_not_starting_with_one)
+
+	def test_should_raise_value_error_when_given_data_starts_with_one_but_is_smaller_than_13_bytes(self):
+		invalid_data_1 = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		assert len(invalid_data_1) < 13
+		with self.assertRaises(ValueError):
+			GamePacket(invalid_data_1)
+
+	def test_should_construct_without_error_when_given_minimal_length_valid_packet_data(self):
+		GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+
+
+class TestOriginalFormatConversionMethod(unittest.TestCase):
+	def setUp(self):
+		self._minimal_valid_game_packet = GamePacket(minimum_length_valid_packet_data)
+
+	@staticmethod
+	def _parse_and_decode_base64_from_written_data(data: bytes) -> bytes:
+		assert data.startswith(b"<m>")
+		assert data.endswith(b"</m>\x00") or data.endswith(b"</m>")
+		base64_data = data.split(b"<m>")[1].split(b"</m>")[0]
+		return b64decode(base64_data)
+
+	def test_should_return_bytes_starting_with_opening_m_tag(self):
+		written_data = self._minimal_valid_game_packet.to_original_xml_and_base64()
+		self.assertTrue(written_data.startswith(b"<m>"))
+
+	def test_should_return_bytes_ending_with_null_character(self):
+		written_data = self._minimal_valid_game_packet.to_original_xml_and_base64()
+		self.assertTrue(written_data.endswith(b"\x00"))
+
+	def test_should_return_bytes_ending_with_closing_m_tag_and_null_terminator(self):
+		written_data = self._minimal_valid_game_packet.to_original_xml_and_base64()
+		self.assertTrue(written_data.endswith(b"</m>\x00"))
+
+	def test_should_return_bytes_with_base64_between_tags_with_encoded_data_starting_with_length_prefix(self):
+		# the data should have the length added as a 32-bit integer at the beginning,
+		# be base64 encoded, wrapped in <m> </m> and end with a null byte as it did originally.
+		game_packet = GamePacket(b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+		game_packet_data = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+		game_packet_data_with_length_prefix = b"\x00\x00\x00\x0d" + game_packet_data
+
+		written_data = game_packet.to_original_xml_and_base64()
+		decoded_base64_content = self._parse_and_decode_base64_from_written_data(written_data)
+		self.assertEqual(game_packet_data_with_length_prefix, decoded_base64_content)
+		self.assertTrue(decoded_base64_content.startswith(b"\x00\x00\x00\r"), game_packet_data_with_length_prefix)

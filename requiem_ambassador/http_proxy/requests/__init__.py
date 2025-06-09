@@ -9,8 +9,8 @@ class HTTPRequest:
 	is the request from the perspective of a client, not a server, hence why the url is used and not the path.
 	"""
 	def __init__(self, method: str, url: str, headers: dict[str, str], content: bytes):
-		self.method = method
-		self.url = url  # the method, as a string, to be used very literally
+		self.method = method  # the method, as a string, to be used very literally
+		self.url = url
 		self.headers = headers.copy() # case-sensitive dictionary for the headers
 		self.content: bytes = content # the content to send in the request.
 

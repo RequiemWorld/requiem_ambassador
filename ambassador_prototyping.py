@@ -132,7 +132,7 @@ async def driving_game_proxy(config: AmbassadorConfig) -> None:
 		while True:
 			game_packet_from_server = await server_reader.read_game_packet()
 			print(f"received packet from game server {game_packet_from_server.packet_data}")
-			await handler.handle_packet_from_client(game_packet_from_server)
+			await handler.handle_packet_from_server(game_packet_from_server)
 
 	async def _handle_connection(reader: StreamReader, writer: StreamWriter) -> None:
 		client_packet_reader = AsyncioGamePacketReader(reader)

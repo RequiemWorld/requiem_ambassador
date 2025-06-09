@@ -77,9 +77,9 @@ class TestMockHTTPRequestExecutorRequestSentToUrlAssertion(MockHTTPRequestExecut
 			self._mock_executor.assert_any_request_sent_to_url("http://127.0.0.20")
 
 	async def test_should_not_raise_any_error_when_single_request_sent_to_url(self):
-		request = self._get_any_request_for_url("http://127.0.1.1")
+		request = self._get_any_request_for_url("http://127.6.1.1")
 		await self._mock_executor.execute_request(request)
-		self._mock_executor.assert_any_request_sent_to_url("http://127.0.1.1")
+		self._mock_executor.assert_any_request_sent_to_url("http://127.6.1.1")
 
 	async def test_should_not_raise_any_error_when_multiple_requests_sent_to_url(self):
 		request = self._get_any_request_for_url("http://127.0.1.1")

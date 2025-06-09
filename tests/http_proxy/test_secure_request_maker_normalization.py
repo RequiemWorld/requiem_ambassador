@@ -1,4 +1,4 @@
-from tests.http_proxy import SecureRequestingUseCaseTestFixture
+from . import SecureRequestingUseCaseTestFixture
 
 
 class TestDuplicateHeaderNormalization(SecureRequestingUseCaseTestFixture):

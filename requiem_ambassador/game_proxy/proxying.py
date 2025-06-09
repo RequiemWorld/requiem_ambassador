@@ -12,7 +12,7 @@ class GameProxyGamePacketHandler:
 		self._whitelisted_type_numbers = [20]
 
 	async def handle_packet_from_client(self, packet: GamePacket):
-		await self._downstream_sender.send_game_packet(packet)
+		await self._upstream_sender.send_game_packet(packet)
 
 	async def handle_packet_from_server(self, packet: GamePacket):
 		if packet.type_number in self._whitelisted_type_numbers:

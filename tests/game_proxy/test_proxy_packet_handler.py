@@ -44,3 +44,18 @@ class TestPacketHandlerServerToClientPacketTypeWhitelisting(ProxyPacketHandlerTe
 			packet_with_whitelisted_type_number = self._make_packet_with_type_number(whitelisted_type_number)
 			await self._packet_handler.handle_packet_from_server(packet_with_whitelisted_type_number)
 			self._client_packet_sender.assert_packet_with_type_number_sent(whitelisted_type_number)
+
+
+
+class TestPacketHandlerClientToServerLogic(ProxyPacketHandlerTestFixture):
+
+	async def test_should_forward_packets_from_the_client_to_the_server(self):
+		valid_packet = self._make_packet_with_type_number(2)  # any number will do, outgoing stuff isn't filtered.
+		await self._packet_handler.handle_packet_from_client(valid_packet)
+		self._server_packet_sender.assert_exactly_one_packet_sent()
+		self._server_packet_sender.assert_packet_with_type_number_sent(2)
+
+	async def test_should_not_forward_packets_from_client_back_to_the_client(self):
+		valid_packet = self._make_packet_with_type_number(5)  # any number will do, outgoing stuff isn't filtered.
+		await self._packet_handler.handle_packet_from_client(valid_packet)
+		self._client_packet_sender.assert_no_packets_sent()

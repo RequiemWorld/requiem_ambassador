@@ -9,6 +9,10 @@ from requiem_ambassador.game_proxy.packets import GamePacketSender
 from requiem_ambassador.game_proxy.proxying import GamePacketReader
 from requiem_ambassador.game_proxy.proxying import GameProxyGamePacketHandler
 from requiem_ambassador.http_proxy.routing import RoutingConfiguration
+from requiem_ambassador.http_proxy.proxying import ReverseProxyHTTPRequestUseCase
+from requiem_ambassador.http_proxy.proxying import MakeRequestSecurelyUseCase
+from requiem_ambassador.http_proxy.aiohttp import AiohttpHTTPRequestExecutor
+
 
 
 class AsyncioGamePacketReader(GamePacketReader):
@@ -222,6 +226,11 @@ async def driving_http_proxy(config: AmbassadorConfig) -> None:
 	http_listen_host = config.listen_options.http_host
 	http_listen_port = config.listen_options.http_port
 	routing_configuration = config.http_forward_options.to_routing_configuration()
+
+	proxying_use_case = ReverseProxyHTTPRequestUseCase(
+		routing_config=routing_configuration,
+		request_use_case=MakeRequestSecurelyUseCase(AiohttpHTTPRequestExecutor(client=aiohttp.ClientSession()))
+	)
 	async def _on_request_to_mobile_server_endpoint(request: web.Request) -> web.Response:
 		content = f'<xml url="http://{config.listen_options.http_host}:{config.listen_options.http_port}/ow" action="info"></xml>'
 		return web.Response(body=content)
@@ -231,12 +240,23 @@ async def driving_http_proxy(config: AmbassadorConfig) -> None:
 		return web.Response(body=body)
 
 	async def _on_every_route(request: web.Request) -> web.Response:
+		print(f"got request for {request.path}")
+
 		if request.path == "/ow/mobileserver":
 			return await _on_request_to_mobile_server_endpoint(request)
 		if request.path == "/ow/static/main.xml":
 			return await _on_request_for_main_xml_endpoint(request)
-		print(f"got request for {request.path}")
-		return web.Response(body="my response")
+		else:
+			response = await proxying_use_case.proxy_request_for_path(
+				method=request.method,
+				path=request.path,
+				headers=dict(request.headers),
+				content=await request.content.read())
+			return web.Response(
+				status=response.status_code,
+				headers=response.headers,
+				body=response.content)
+		# return web.Response(body="my response")
 
 
 

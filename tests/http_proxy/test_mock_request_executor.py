@@ -86,3 +86,13 @@ class TestMockHTTPRequestExecutorRequestSentToUrlAssertion(MockHTTPRequestExecut
 		await self._mock_executor.execute_request(request)
 		await self._mock_executor.execute_request(request)
 		self._mock_executor.assert_any_request_sent_to_url("http://127.0.1.1")
+
+
+class TestMockHTTPRequestExecutorChangingResponseForUrlAfterOneAlreadySet(MockHTTPRequestExecutorTestFixture):
+	async def test_should_return_second_response_set_for_url_on_execute_request_method_after_setting_one(self):
+		response_one = HTTPResponse(500, {"Whatever": "1"}, b"1")
+		response_two = HTTPResponse(300, {"Whatever": "2"}, b"2")
+		self._mock_executor.set_response_for_url("http://127.0.10.11/my/path", response_one)
+		self._mock_executor.set_response_for_url("http://127.0.10.11/my/path", response_two)
+		request = self._get_any_request_for_url("http://127.0.10.11/my/path")
+		self.assertIs(response_two, await self._mock_executor.execute_request(request))

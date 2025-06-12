@@ -1,6 +1,5 @@
 import asyncio
 import configparser
-
 import aiohttp
 from aiohttp import web
 from asyncio import StreamReader
@@ -164,15 +163,20 @@ async def driving_http_proxy(config: AmbassadorConfig) -> None:
 	async def _on_every_route(request: web.Request) -> web.Response:
 		raise NotImplementedError
 
+	async def _on_request_to_mobile_server_endpoint(request: web.Request) -> web.Response:
+		content = f'<xml url="http://{config.listen_options.http_host}:{config.listen_options.http_port}/ow" action="info"></xml>'
+		return web.Response(body=content)
+
 
 	app = aiohttp.web.Application()
 	# https://stackoverflow.com/questions/70783518/catching-all-routes-in-aiohttp
 	app.router.add_route("*", "/{key:.+}", _on_every_route)
+	app.router.add_route("get", "/ow/mobileserver", _on_request_to_mobile_server_endpoint)
 	runner = web.AppRunner(app)
 	await runner.setup()
 	site = web.TCPSite(runner, http_listen_host, http_listen_port)
 	await site.start()
-
+	print(f"ambassador http proxy listening on {http_listen_host}:{http_listen_port}")
 	while True:
 		await asyncio.sleep(3600)
 
@@ -184,6 +188,9 @@ async def main() -> None:
 		AmbassadorForwardOptions.from_config_file("ambassador_prototyping.cfg")
 	)
 	print("starting the game proxy")
-	await driving_game_proxy(config)
+	await asyncio.gather(
+		driving_game_proxy(config),
+		driving_http_proxy(config)
+	)
 
 asyncio.run(main())

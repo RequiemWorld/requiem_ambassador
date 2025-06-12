@@ -61,13 +61,13 @@ class RoutingConfiguration:
 				<param name="dsop" value="Y2wzdjNyIGhheG9yCg=="/>
 				<param name="main" value="{ambassador_base_url}/main-api/"/>
 				<param name="cdn" value="{ambassador_base_url}/main-cdn/"/>
-				<param name="image" value="http://{ambassador_base_url}/image-cdn/"/>
-				<param name="game-image" value="http://{ambassador_base_url}/game-image-cdn/"/>
-				<param name="cdn-dynamic-personal" value="http://{ambassador_base_url}/"/>
-				<param name="cdn-dynamic-photos" value="http://{ambassador_base_url}/cdn-dynamic/"/>
-				<param name="cdn-dynamic-contests" value="http://{ambassador_base_url}/cdn-dynamic/"/>
-				<param name="cdn-dynamic-crews" value="http://{ambassador_base_url}/cdn-dynamic/"/>
-				<param name="cdn-dynamic-common" value="http://{ambassador_base_url}/cdn-dynamic-common/"/>
+				<param name="image" value="{ambassador_base_url}/image-cdn/"/>
+				<param name="game-image" value="{ambassador_base_url}/game-image-cdn/"/>
+				<param name="cdn-dynamic-personal" value="{ambassador_base_url}/"/>
+				<param name="cdn-dynamic-photos" value="{ambassador_base_url}/cdn-dynamic/"/>
+				<param name="cdn-dynamic-contests" value="{ambassador_base_url}/cdn-dynamic/"/>
+				<param name="cdn-dynamic-crews" value="{ambassador_base_url}/cdn-dynamic/"/>
+				<param name="cdn-dynamic-common" value="{ambassador_base_url}/cdn-dynamic-common/"/>
 				<param name="env" value="supershell"/>
 				<param name="landing" value="103"/>
 				<param name="future" value="false"/>
@@ -76,6 +76,7 @@ class RoutingConfiguration:
 		</supershell>
 		""".encode()
 		return data
+
 	def get_upstream_url_for_path(self, path: str) -> str | None:
 		# prepares the path by replacing everywhere there are multiple slashes with a single slash
 		normalized_path = re.sub("/+", "/", path)

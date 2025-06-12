@@ -26,6 +26,7 @@ BLACKLISTED_LIBRARY_STRINGS = [
 	"flash.system",
 	# outright block anything that mentions 'loader' i.e. URLLoader, flash.display.Loader
 	"loader",
+	"getDefinitionByName",
 ]
 
 

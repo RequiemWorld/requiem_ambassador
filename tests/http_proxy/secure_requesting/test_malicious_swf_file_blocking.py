@@ -13,6 +13,17 @@ class TestBlockingOfFlashFilesystemFile(SecureRequestingUseCaseTestFixture):
 		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashFilesystemFile-zws.swf")
 
 
+class TestBlockingOfFlashUtilsGetDefinitionByName(SecureRequestingUseCaseTestFixture):
+	async def test_should_block_no_compression_variants_of_swf_files_which_use_flash_utils_getDefinitionByName(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashUtilsGetDefinitionByName-fws.swf")
+
+	async def test_should_block_zlib_compression_variants_of_swf_files_which_use_flash_utils_getDefinitionByName(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashUtilsGetDefinitionByName-cws.swf")
+
+	async def test_should_block_lzma_compression_variants_of_swf_files_which_use_flash_utils_getDefinitionByName(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashUtilsGetDefinitionByName-zws.swf")
+
+
 class TestBlockingOfFlashDisplayLoader(SecureRequestingUseCaseTestFixture):
 	async def test_should_block_no_compression_variants_of_swf_files_which_use_flash_display_loader(self):
 		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashDisplayLoader-fws.swf")

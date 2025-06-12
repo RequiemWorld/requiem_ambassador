@@ -14,4 +14,15 @@ class TestBlockingOfFlashFilesystemFile(SecureRequestingUseCaseTestFixture):
 		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashFilesystemFile-zws.swf")
 
 
+class TestNoneBlockingOfNonMaliciousSWFFiles(SecureRequestingUseCaseTestFixture):
+	# this is just tested against a SWF that does nothing but extend Sprite for now,
+	# and in practice this will allow significantly more.
+	async def test_should_not_block_response_with_content_of_swf_that_is_not_malicious_in_no_compression_variation(self):
+		await self._verifyUseCaseWillNotBlockResponseWithSwfSampleFile("EmptyExtendsSprite-fws.swf")
+
+	async def test_should_not_block_response_with_content_of_swf_that_is_not_malicious_in_zlib_compression_variation(self):
+		await self._verifyUseCaseWillNotBlockResponseWithSwfSampleFile("EmptyExtendsSprite-cws.swf")
+
+	async def test_should_not_block_response_with_content_of_swf_that_is_not_malicious_in_lzma_compression_variation(self):
+		await self._verifyUseCaseWillNotBlockResponseWithSwfSampleFile("EmptyExtendsSprite-zws.swf")
 

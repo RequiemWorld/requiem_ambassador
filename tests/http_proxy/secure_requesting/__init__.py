@@ -57,7 +57,17 @@ class SecureRequestingUseCaseTestFixture(IsolatedAsyncioTestCase):
 		response = await self._make_any_request_through_use_case_to_url("http://example.com/bad_file.swf")
 		self.assertResponseMeansSwfBlocked(response)
 
+	async def _verifyUseCaseWillNotBlockResponseWithSwfSampleFile(self, swf_sample_file: str):
+		self._make_and_set_response_for_url_from_swf_sample(
+			url="http://example.com/good_file.swf",
+			sample_file_name=swf_sample_file)
+		response = await self._make_any_request_through_use_case_to_url("http://example.com/good_file.swf")
+		self.assertResponseMeansSwfNotBlocked(response, swf_sample_file)
 
 	def assertResponseMeansSwfBlocked(self, response: HTTPResponse):
 		self.assertEqual(response.content, b"bad swf blocked")
 		self.assertEqual(response.status_code, 403)
+
+	def assertResponseMeansSwfNotBlocked(self, response: HTTPResponse, swf_sample_name: str):
+		swf_sample_content = get_swf_sample_content(swf_sample_name)
+		self.assertEqual(swf_sample_content, response.content)

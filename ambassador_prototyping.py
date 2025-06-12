@@ -8,6 +8,7 @@ from requiem_ambassador.game_proxy import GamePacket
 from requiem_ambassador.game_proxy.packets import GamePacketSender
 from requiem_ambassador.game_proxy.proxying import GamePacketReader
 from requiem_ambassador.game_proxy.proxying import GameProxyGamePacketHandler
+from requiem_ambassador.http_proxy.routing import RoutingConfiguration
 
 
 class AsyncioGamePacketReader(GamePacketReader):
@@ -65,6 +66,57 @@ class AmbassadorForwardOptions:
 		upstream_game_websocket = config.get("forwarding", "upstream_game_websocket")
 		return AmbassadorForwardOptions(upstream_game_websocket)
 
+
+class AmbassadorHTTPForwardOptions:
+	def __init__(self,
+				 main_api_base_url: str,
+				 main_cdn_base_url: str,
+				 image_cdn_base_url: str,
+				 game_image_cdn_base_url: str,
+				 cdn_dynamic_base_url: str,
+				 cdn_dynamic_common_base_url: str):
+		"""
+		:param main_api_base_url: example: http://www.example.com/ow/
+		:param main_cdn_base_url: example: http://cdn-ssl.example.com/ow/
+		:param image_cdn_base_url: example: http://cdn-ssl.example.com/i/
+		:param cdn_dynamic_base_url: example: http://s3e-main.example.com/shared/
+		:param cdn_dynamic_common_base_url: example: http://s3e-images.example.com/shared/
+		"""
+		self.main_api_base_url = main_api_base_url
+		self.main_cdn_base_url = main_cdn_base_url
+		self.image_cdn_base_url = image_cdn_base_url
+		self.game_image_cdn_base_url = game_image_cdn_base_url
+		self.cdn_dynamic_base_url = cdn_dynamic_base_url
+		self.cdn_dynamic_common_url = cdn_dynamic_common_base_url
+
+	@staticmethod
+	def from_config_file(file_path: str):
+		parser = configparser.ConfigParser()
+		parser.read(file_path)
+		main_api_base_url = parser.get("forwarding-http", "main_api_base_url")
+		main_cdn_base_url = parser.get("forwarding-http", "main_cdn_base_url")
+		image_cdn_base_url = parser.get("forwarding-http", "image_cdn_base_url")
+		cdn_dynamic_base_url = parser.get("forwarding-http", "cdn_dynamic_base_url")
+		cdn_dynamic_common_url = parser.get("forwarding-http", "cdn_dynamic_common_base_url")
+		return AmbassadorHTTPForwardOptions(
+			main_api_base_url=main_api_base_url,
+			main_cdn_base_url=main_cdn_base_url,
+			image_cdn_base_url=image_cdn_base_url,
+			game_image_cdn_base_url=image_cdn_base_url,
+			cdn_dynamic_base_url=cdn_dynamic_base_url,
+			cdn_dynamic_common_base_url=cdn_dynamic_common_url)
+
+
+	def to_routing_configuration(self) -> RoutingConfiguration:
+		return RoutingConfiguration(
+			main_api_base_url=self.main_api_base_url,
+			main_cdn_base_url=self.main_cdn_base_url,
+			image_cdn_base_url=self.image_cdn_base_url,
+			game_image_cdn_base_url=self.game_image_cdn_base_url,
+			cdn_dynamic_base_url=self.cdn_dynamic_base_url,
+			cdn_dynamic_common_base_url=self.cdn_dynamic_common_url)
+
+
 class AmbassadorListenOptions:
 
 	def __init__(self, http_host: str, http_port: int, game_host: str, game_port: int):
@@ -101,9 +153,13 @@ class AmbassadorListenOptions:
 
 
 class AmbassadorConfig:
-	def __init__(self, listen_options: AmbassadorListenOptions, forward_options: AmbassadorForwardOptions):
+	def __init__(self,
+				 listen_options: AmbassadorListenOptions,
+				 forward_options: AmbassadorForwardOptions,
+				 http_forward_options: AmbassadorHTTPForwardOptions):
 		self._listen_options = listen_options
 		self._forward_options = forward_options
+		self._http_forward_options = http_forward_options
 
 	@property
 	def listen_options(self):
@@ -112,6 +168,11 @@ class AmbassadorConfig:
 	@property
 	def forward_options(self):
 		return self._forward_options
+
+	@property
+	def http_forward_options(self) -> AmbassadorHTTPForwardOptions:
+		return self._http_forward_options
+
 
 
 async def driving_game_proxy(config: AmbassadorConfig) -> None:
@@ -160,12 +221,23 @@ async def driving_http_proxy(config: AmbassadorConfig) -> None:
 	"""
 	http_listen_host = config.listen_options.http_host
 	http_listen_port = config.listen_options.http_port
-	async def _on_every_route(request: web.Request) -> web.Response:
-		raise NotImplementedError
-
+	routing_configuration = config.http_forward_options.to_routing_configuration()
 	async def _on_request_to_mobile_server_endpoint(request: web.Request) -> web.Response:
 		content = f'<xml url="http://{config.listen_options.http_host}:{config.listen_options.http_port}/ow" action="info"></xml>'
 		return web.Response(body=content)
+
+	async def _on_request_for_main_xml_endpoint(request: web.Request) -> web.Response:
+		body = routing_configuration.make_main_xml_data(http_listen_host, http_listen_port)
+		return web.Response(body=body)
+
+	async def _on_every_route(request: web.Request) -> web.Response:
+		if request.path == "/ow/mobileserver":
+			return await _on_request_to_mobile_server_endpoint(request)
+		if request.path == "/ow/static/main.xml":
+			return await _on_request_for_main_xml_endpoint(request)
+		print(f"got request for {request.path}")
+		return web.Response(body="my response")
+
 
 
 	app = aiohttp.web.Application()
@@ -185,7 +257,8 @@ async def main() -> None:
 
 	config = AmbassadorConfig(
 		AmbassadorListenOptions.from_config_file("ambassador_prototyping.cfg"),
-		AmbassadorForwardOptions.from_config_file("ambassador_prototyping.cfg")
+		AmbassadorForwardOptions.from_config_file("ambassador_prototyping.cfg"),
+		AmbassadorHTTPForwardOptions.from_config_file("ambassador_prototyping.cfg")
 	)
 	print("starting the game proxy")
 	await asyncio.gather(

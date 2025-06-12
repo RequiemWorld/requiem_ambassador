@@ -23,7 +23,8 @@ BLACKLISTED_LIBRARY_STRINGS = [
 	"flash.external",
 	"flash.html",
 	"flash.desktop",
-	"flash.system",
+
+	"flash.system",  # as a side effect of blocking this, getDefinition is also blocked
 	# outright block anything that mentions 'loader' i.e. URLLoader, flash.display.Loader
 	"loader",
 	"getDefinitionByName",

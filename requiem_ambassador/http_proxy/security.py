@@ -1,7 +1,11 @@
 from __future__ import annotations
+import io
 from .requests import HTTPRequest
 from .requests import HTTPResponse
 from .requests import HTTPRequestExecutor
+from ._swf_scanning import read_swf_data
+from ._swf_scanning import scan_swf_data_blacklisted_libraries
+
 
 
 class MakeRequestSecurelyUseCase:
@@ -33,6 +37,14 @@ class MakeRequestSecurelyUseCase:
 				new_headers[new_header_name] = header_value
 		return new_headers
 
+	@staticmethod
+	def _has_swf_signature_on_start_of_response_content(response: HTTPResponse) -> bool:
+		return response.content[0:3] in [b"FWS", b"CWS", b"ZWS"]
+
+	@staticmethod
+	def _make_swf_blocked_response() -> HTTPResponse:
+		return HTTPResponse(status_code=403, headers={}, content=b"bad swf blocked")
+
 	async def make_request(self, request: HTTPRequest) -> HTTPResponse:
 		"""
 		- Normalizes response headers and leaves only one of each in Title-Casing.
@@ -45,4 +57,9 @@ class MakeRequestSecurelyUseCase:
 			del normalized_headers["Content-Encoding"]
 		if "Transfer-Encoding" in normalized_headers:
 			del normalized_headers["Transfer-Encoding"]
-		return HTTPResponse(original_response.status_code, normalized_headers, b"")
+		if self._has_swf_signature_on_start_of_response_content(original_response):
+			swf_data_without_compression = read_swf_data(io.BytesIO(original_response.content))
+			contains_blacklisted_libraries_or_symbols = scan_swf_data_blacklisted_libraries(swf_data_without_compression)
+			if contains_blacklisted_libraries_or_symbols:
+				return self._make_swf_blocked_response()
+		return HTTPResponse(original_response.status_code, normalized_headers, original_response.content)

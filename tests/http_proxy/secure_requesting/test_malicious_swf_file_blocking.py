@@ -35,6 +35,21 @@ class TestBlockingOfFlashDisplayLoader(SecureRequestingUseCaseTestFixture):
 		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("FlashDisplayLoader-zws.swf")
 
 
+class TestBlockingSWFFilesWhichUseGetDefinitionOnCurrentApplicationDomain(SecureRequestingUseCaseTestFixture):
+	# The class for flash.filesystem.File or any other can be gotten through
+	# flash.system.ApplicationDomain.getDefinition by string, which can be obfuscated
+	# to evade our string scanning solution, this test assures that samples that use it are blocked.
+
+	async def test_should_block_no_compression_swf_variants_that_use_get_definition_on_current_application_domain(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("ApplicationDomainCurrentDomainGetDefinition-fws.swf")
+
+	async def test_should_block_zlib_compression_swf_variants_that_use_get_definition_on_current_application_domain(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("ApplicationDomainCurrentDomainGetDefinition-cws.swf")
+
+	async def test_should_block_lzma_compression_swf_variants_that_use_get_definition_on_current_application_domain(self):
+		await self._verifyUseCaseWillBlockResponseWithSwfSampleFile("ApplicationDomainCurrentDomainGetDefinition-zws.swf")
+
+
 class TestNoneBlockingOfNonMaliciousSWFFiles(SecureRequestingUseCaseTestFixture):
 	# this is just tested against a SWF that does nothing but extend Sprite for now,
 	# and in practice this will allow significantly more.

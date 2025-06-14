@@ -46,13 +46,14 @@ class AmbassadorHTTPForwardOptions:
 		main_api_base_url = parser.get("forwarding-http", "main_api_base_url")
 		main_cdn_base_url = parser.get("forwarding-http", "main_cdn_base_url")
 		image_cdn_base_url = parser.get("forwarding-http", "image_cdn_base_url")
+		game_image_cdn_base_url = parser.get("forwarding-http", "game_image_cdn_base_url")
 		cdn_dynamic_base_url = parser.get("forwarding-http", "cdn_dynamic_base_url")
 		cdn_dynamic_common_url = parser.get("forwarding-http", "cdn_dynamic_common_base_url")
 		return AmbassadorHTTPForwardOptions(
 			main_api_base_url=main_api_base_url,
 			main_cdn_base_url=main_cdn_base_url,
 			image_cdn_base_url=image_cdn_base_url,
-			game_image_cdn_base_url=image_cdn_base_url,
+			game_image_cdn_base_url=game_image_cdn_base_url,
 			cdn_dynamic_base_url=cdn_dynamic_base_url,
 			cdn_dynamic_common_base_url=cdn_dynamic_common_url)
 

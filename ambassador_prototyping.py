@@ -4,6 +4,10 @@ import aiohttp
 from aiohttp import web
 from asyncio import StreamReader
 from asyncio import StreamWriter
+from requiem_ambassador.configuration import AmbassadorForwardOptions
+from requiem_ambassador.configuration import  AmbassadorHTTPForwardOptions
+from requiem_ambassador.configuration import  AmbassadorListenOptions
+from requiem_ambassador.configuration import  AmbassadorConfig
 from requiem_ambassador.game_proxy import GamePacket
 from requiem_ambassador.game_proxy.packets import GamePacketSender
 from requiem_ambassador.game_proxy.proxying import GamePacketReader

@@ -35,3 +35,7 @@ class TestGetUpstreamUrlMethod(TestCase):
 	def test_should_return_upstream_url_for_cdn_dynamic_common_path_roughly_as_expected(self):
 		upstream_url = self._config.get_upstream_url_for_path("/cdn-dynamic-common/16/17/18")
 		self.assertEqual("http://cdn-dynamic-common.example.com/16/17/18", upstream_url)
+
+	def test_should_return_upstream_url_for_image_cdn_path_when_path_just_starts_with_i_slash(self):
+		upstream_url = self._config.get_upstream_url_for_path("/i/path/to/thing")
+		self.assertEqual("http://image-cdn.example.com/path/to/thing", upstream_url)

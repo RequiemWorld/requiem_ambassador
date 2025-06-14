@@ -78,6 +78,7 @@ class RoutingConfiguration:
 		return data
 
 	def get_upstream_url_for_path(self, path: str) -> str | None:
+		assert path.startswith("/")
 		# prepares the path by replacing everywhere there are multiple slashes with a single slash
 		normalized_path = re.sub("/+", "/", path)
 		if normalized_path.startswith(self.main_api_path):
@@ -85,6 +86,12 @@ class RoutingConfiguration:
 		elif normalized_path.startswith(self.main_cdn_path):
 			return urljoin(self._main_cdn_base_url, normalized_path.replace(self.main_cdn_path, ""))
 		elif normalized_path.startswith(self.image_cdn_path):
+			# in the way we store the files we're going to remove the i/ in any place and make it more explicit
+			# e.g. /image-cdn/ and then the path, likewise for any base paths where possible. The game client will
+			# send just i/ instead of /image-cdn/ even when set in the main.xml, and then other times it will send
+			# the /image-cdn/ url and i/, so we remove the i/ in that case.
+			if normalized_path.startswith("/image-cdn/i/"):
+				normalized_path = normalized_path.replace("/image-cdn/i/", "/image-cdn/", 1)
 			return urljoin(self._image_cdn_base_url, normalized_path.replace(self.image_cdn_path, ""))
 		elif normalized_path.startswith(self.game_image_cdn_path):
 			return urljoin(self._game_image_cdn_base_url, normalized_path.replace(self.game_image_cdn_path, ""))
@@ -92,5 +99,7 @@ class RoutingConfiguration:
 			return urljoin(self._cdn_dynamic_base_url, normalized_path.replace(self.cdn_dynamic_path, ""))
 		elif normalized_path.startswith(self.cdn_dynamic_common_path):
 			return urljoin(self._cdn_dynamic_common_base_url, normalized_path.replace(self.cdn_dynamic_common_path, ""))
-
+		# if the url just starts with /i/ then we point it to the image cdn without the i/
+		elif normalized_path.startswith("/i/"):
+			return urljoin(self._image_cdn_base_url, normalized_path.replace("/i/", "", 1))
 		return None

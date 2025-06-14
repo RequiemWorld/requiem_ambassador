@@ -36,7 +36,7 @@ class TestAmbassadorHTTPForwardOptionsConfigFileLoadingFunction(unittest.TestCas
 		self.assertEqual("http://image-cdn.example.com/image/", self._loaded_config.image_cdn_base_url)
 
 	def test_should_read_game_image_cdn_base_url_from_section_in_config_file_correctly(self):
-		self.assertEqual("http://game-image-cdn.example.com/image/", self._loaded_config.game_image_cdn_base_url)
+		self.assertEqual("http://game-image-cdn.example.com/image-game/", self._loaded_config.game_image_cdn_base_url)
 
 	def test_should_read_dynamic_cdn_base_url_from_section_in_config_file_correctly(self):
 		self.assertEqual("http://cdn-dynamic.example.com/cdn-dynamic/", self._loaded_config.cdn_dynamic_base_url)

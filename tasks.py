@@ -31,19 +31,21 @@ def _script_to_pyinstaller_exe(input_script_path: str, output_exe_path: str):
 def bundle_ambassador_and_client_windows(
 		context: invoke.Context,
 		game_swf_path: str,
-		output_directory_path: str):
+		output_directory_path: str,
+		ambassador_config_path: str):
 	"""
 	:param game_swf_path: The path to the SWF for the game client that should have a new captive runtime built for it.
 	:param output_directory_path: The path that the ambassador_prototyping.exe and built captive_runtime directory should be placed in.
+	:param ambassador_config_path: The path to the configuration file for the ambassador to ship with it.
 	"""
 	if not shutil.which("mxmlc"):
 		print("mxmlc utility not found, air bin directory probably not in paths, aborting.")
 		raise RuntimeError()
-
+	assert os.path.exists(ambassador_config_path)
 	assert os.path.exists(game_swf_path)
 	with tempfile.TemporaryDirectory() as temp_directory_path:
 		_script_to_pyinstaller_exe("ambassador_prototyping.py", os.path.join(temp_directory_path, "ambassador_prototyping.exe"))
-		shutil.copy("ambassador_prototyping.cfg", os.path.join(temp_directory_path, "ambassador_prototyping.cfg"))
+		shutil.copy(ambassador_config_path, os.path.join(temp_directory_path, "ambassador_prototyping.cfg"))
 		# building a captive runtime for the game SWF and putting it alongside the ambassador.
 		execution_helper = AirSDKExecutionHelper.from_environment_path()
 		captive_runtime_output_path = os.path.join(temp_directory_path, "requiem-restore")
@@ -67,11 +69,16 @@ def bundle_ambassador_and_client_windows(
 
 
 @invoke.task
-def bundle_ambassador_and_client_windows_zip(context: invoke.Context, game_swf_path: str, output_zip_file_path: str):
+def bundle_ambassador_and_client_windows_zip(
+		context: invoke.Context,
+		game_swf_path: str,
+		output_zip_file_path: str,
+		ambassador_config_path: str):
 	output_zip_file_path = os.path.abspath(output_zip_file_path)
 	with tempfile.TemporaryDirectory() as temp_directory_path:
 		# in the root of this temporary directory should be a directory called requiem_ambassador,
 		# we zip up this temp directory, and then in the archive at the root will be the normal output directory.
 		ambassador_bundling_output_directory = os.path.join(temp_directory_path, "requiem_ambassador")
-		bundle_ambassador_and_client_windows(context, game_swf_path, ambassador_bundling_output_directory)
+		bundle_ambassador_and_client_windows(
+			context, game_swf_path, ambassador_bundling_output_directory, ambassador_config_path)
 		zip_up_directory(temp_directory_path, output_zip_file_path)

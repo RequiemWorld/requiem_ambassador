@@ -40,6 +40,7 @@ def bundle_ambassador_and_client_windows(
 		print("mxmlc utility not found, air bin directory probably not in paths, aborting.")
 		raise RuntimeError()
 
+	assert os.path.exists(game_swf_path)
 	with tempfile.TemporaryDirectory() as temp_directory_path:
 		_script_to_pyinstaller_exe("ambassador_prototyping.py", os.path.join(temp_directory_path, "ambassador_prototyping.exe"))
 		shutil.copy("ambassador_prototyping.cfg", os.path.join(temp_directory_path, "ambassador_prototyping.cfg"))

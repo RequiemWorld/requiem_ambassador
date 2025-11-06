@@ -1,4 +1,6 @@
 pytest
+psutil
+httpx
 pytest-xdist
 wiremock
 testcontainers

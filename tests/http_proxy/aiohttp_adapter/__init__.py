@@ -7,10 +7,12 @@ from wiremock.client import MappingRequest
 from wiremock.client import MappingResponse
 from wiremock.resources.mappings import HttpMethods
 from wiremock.resources.mappings.resource import Mappings
+from wiremock.resources.near_misses import NearMissMatchPatternRequest
 from wiremock.testing.testcontainer import WireMockContainer
 from requiem_ambassador.http_proxy.requests import HTTPResponse, HTTPRequest
 from requiem_ambassador.http_proxy.aiohttp import AiohttpHTTPRequestExecutor
-
+from wiremock.resources.requests import RequestResponseFindResponse, RequestResponseRequest
+from wiremock.client import Requests
 
 class AiohttpRequestExecutorIntegrationTestFixture(IsolatedAsyncioTestCase):
 	""""
@@ -50,6 +52,14 @@ class AiohttpRequestExecutorIntegrationTestFixture(IsolatedAsyncioTestCase):
 			request=MappingRequest(method=http_method, url=path),
 			response=MappingResponse(status=status_code, body=body))
 		Mappings.create_mapping(mapping)
+
+	@staticmethod
+	def _get_requests_to_path(path: str) -> list[RequestResponseRequest]:
+		request_criteria = NearMissMatchPatternRequest()
+		request_criteria.url = path
+		matching: RequestResponseFindResponse = Requests.get_matching_requests(request_criteria)
+		return list(matching.requests)
+
 
 	async def _make_http_request(self,
 								 path: str,

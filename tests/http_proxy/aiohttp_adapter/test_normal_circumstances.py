@@ -1,7 +1,13 @@
-import aiohttp
-import unittest
 from wiremock.client import HttpMethods
 from . import AiohttpRequestExecutorIntegrationTestFixture
+
+
+class TestSimpleRequestsSendingHeaders(AiohttpRequestExecutorIntegrationTestFixture):
+	async def test_should_send_request_to_server_with_passed_headers(self):
+		self._add_simple_mapping("/something-123")
+		await self._make_http_request("/something-123", "POST", headers={"A": "B", "C": "D"})
+		self.assertEqual("B", self._get_requests_to_path("/something-123")[0].headers["A"])
+		self.assertEqual("D", self._get_requests_to_path("/something-123")[0].headers["C"])
 
 
 class TestSimpleRequestsAndResponses(AiohttpRequestExecutorIntegrationTestFixture):

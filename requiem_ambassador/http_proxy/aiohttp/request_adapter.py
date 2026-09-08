@@ -16,5 +16,5 @@ class AiohttpHTTPRequestExecutor(HTTPRequestExecutor):
 		self._client = client
 
 	async def execute_request(self, request: HTTPRequest) -> HTTPResponse:
-		aiohttp_response = await self._client.request(request.method, request.url)
+		aiohttp_response = await self._client.request(request.method, request.url, headers=request.headers)
 		return await _aiohttp_response_to_core_response(aiohttp_response)

@@ -144,11 +144,9 @@ class AmbassadorConfig:
 	def __init__(self,
 				 listen_options: AmbassadorListenOptions,
 				 forward_options: AmbassadorForwardOptions,
-				 http_forward_options: AmbassadorHTTPForwardOptions,
-				 launch_options: AmbassadorLaunchOptions):
+				 http_forward_options: AmbassadorHTTPForwardOptions):
 		self._listen_options = listen_options
 		self._forward_options = forward_options
-		self._launch_options = launch_options
 		self._http_forward_options = http_forward_options
 
 	@property

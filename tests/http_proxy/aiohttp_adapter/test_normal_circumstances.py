@@ -10,6 +10,13 @@ class TestSimpleRequestsSendingHeaders(AiohttpRequestExecutorIntegrationTestFixt
 		self.assertEqual("D", self._get_requests_to_path("/something-123")[0].headers["C"])
 
 
+class TestSimpleRequestsSendingContent(AiohttpRequestExecutorIntegrationTestFixture):
+	async def test_should_send_request_to_server_with_passed_content(self):
+		self._add_simple_mapping("/some-path/")
+		await self._make_http_request("/some-path/", "get", {}, content=b"My Content")
+		self.assertEqual("My Content", self._get_requests_to_path("/some-path/")[0].body)
+
+
 class TestSimpleRequestsAndResponses(AiohttpRequestExecutorIntegrationTestFixture):
 	async def test_should_return_response_with_correct_content_under_normal_circumstances(self):
 		self._add_simple_mapping("/hello-world", body="Hello World123")

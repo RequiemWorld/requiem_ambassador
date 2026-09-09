@@ -20,6 +20,10 @@ class MockHTTPRequestExecutor(HTTPRequestExecutor):
 	def get_default_response(self):
 		return self._default_response
 
+	def get_only_request_sent(self):
+		assert len(self._requests_executed) == 1
+		return self._requests_executed[0]
+
 	def assert_any_request_sent_to_url(self, url: str):
 		for executed_request in self._requests_executed:
 			if executed_request.url == url:

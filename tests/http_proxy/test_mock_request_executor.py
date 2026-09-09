@@ -96,3 +96,22 @@ class TestMockHTTPRequestExecutorChangingResponseForUrlAfterOneAlreadySet(MockHT
 		self._mock_executor.set_response_for_url("http://127.0.10.11/my/path", response_two)
 		request = self._get_any_request_for_url("http://127.0.10.11/my/path")
 		self.assertIs(response_two, await self._mock_executor.execute_request(request))
+
+
+class TestMockHTTPRequestExecutorGettingOnlyRequestSent(MockHTTPRequestExecutorTestFixture):
+
+	async def test_should_return_only_response_sent_when_only_one_has_been_sent(self):
+		request_to_send = HTTPRequest("get", "http://127.0.0.1", headers={}, content=b"content")
+		await self._mock_executor.execute_request(request_to_send)
+		only_request_sent = self._mock_executor.get_only_request_sent()
+		self.assertEqual(only_request_sent.method, "get")
+		self.assertEqual(only_request_sent.url, "http://127.0.0.1")
+		self.assertEqual(only_request_sent.headers, {})
+		self.assertEqual(only_request_sent.content, b"content")
+
+	async def test_should_raise_assertion_error_when_more_than_one_request_has_been_sent(self):
+		request_to_send = HTTPRequest("get", "http://127.0.0.1", headers={}, content=b"content")
+		await self._mock_executor.execute_request(request_to_send)
+		await self._mock_executor.execute_request(request_to_send)
+		with self.assertRaises(AssertionError):
+			self._mock_executor.get_only_request_sent()
